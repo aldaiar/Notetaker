@@ -1,8 +1,15 @@
+from typing import Annotated
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.database import get_db
+from app.db.models import User
+
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from jwt.exceptions import InvalidTokenError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db.database import get_db
@@ -59,3 +66,11 @@ async def get_current_user(
         )
 
     return user
+
+
+CurrentUser = Annotated[User, Depends(get_current_user)]
+Session = Annotated[AsyncSession, Depends(get_db)]
+
+
+def not_implemented() -> None:
+    raise HTTPException(status_code=501, detail="Not implemented yet")

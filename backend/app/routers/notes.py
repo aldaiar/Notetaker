@@ -1,0 +1,47 @@
+from typing import Annotated, Literal
+
+from fastapi import APIRouter, Query, status
+from datetime import datetime
+
+from app.deps import CurrentUser, Session, not_implemented
+from app.schemas.common import Page, VersionBody
+from app.schemas.notes import NoteConflict, NoteCreate, NoteRead, NoteUpdate
+from app.api import notes as service
+router = APIRouter(prefix="/notes", tags=["notes"])
+
+CONFLICT = {409: {"model": NoteConflict, "description": "Версия заметки изменилась"}}
+
+
+@router.post("", response_model=NoteRead, status_code=status.HTTP_201_CREATED)
+async def create_note(body: NoteCreate, user: CurrentUser, session: Session):
+    return await service.create_note(session, user, body)
+
+
+@router.get("/{note_id}", response_model=NoteRead)
+async def get_note(note_id: int, user: CurrentUser, session: Session):
+    return await service.get_note(session, user.id, note_id)
+
+
+@router.patch("/{note_id}", response_model=NoteRead, responses=CONFLICT)
+async def update_note(note_id: int, body: NoteUpdate, user: CurrentUser, session: Session):
+    return await service.update_note(session, user, note_id, body)
+
+
+@router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_note(note_id: int, user: CurrentUser, session: Session):
+    await service.delete_note(session, user, note_id)
+
+
+@router.post("/{note_id}/activate", response_model=NoteRead, responses=CONFLICT)
+async def activate_note(note_id: int, body: VersionBody, user: CurrentUser, session: Session):
+    return await service.set_active(session, user, note_id, body.version, True)
+
+
+@router.post("/{note_id}/deactivate", response_model=NoteRead, responses=CONFLICT)
+async def deactivate_note(note_id: int, body: VersionBody, user: CurrentUser, session: Session):
+    return await service.set_active(session, user, note_id, body.version, False)
+
+
+@router.post("/{note_id}/restore", response_model=NoteRead)
+async def restore_note(note_id: int, user: CurrentUser, session: Session):
+    return await service.restore_note(session, user, note_id)

@@ -1,14 +1,9 @@
 from fastapi import APIRouter, Depends
 
-from app.api.dependencies import get_current_user
+from app.deps import get_current_user
 from app.db.models import User
-from app.schemas import UserRead
-
-
-router = APIRouter(
-    prefix="/users",
-    tags=["Users"],
-)
+from backend.app.schemas.schemas import UserRead
+from app.routers.users import router
 
 
 @router.get("/me", response_model=UserRead)
