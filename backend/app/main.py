@@ -7,6 +7,8 @@ from app.db.database import engine
 from app.db.base import Base
 from app.db import models
 from app.api.register import router as register_router
+from app.api.auth import router as auth_router
+from app.api.users import router as users_router
 
 
 @asynccontextmanager
@@ -22,6 +24,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(register_router)
+app.include_router(auth_router)
+app.include_router(users_router)
+
 
 
 @app.get("/health/db", tags=["Health"])
