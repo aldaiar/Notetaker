@@ -212,6 +212,16 @@ class Note(Base):
             "user_id",
             "updated_at",
         ),
+        Index(
+            "ix_notes_title_trgm", "title",
+            postgresql_using="gin",
+            postgresql_ops={"title": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_notes_body_trgm", "body",
+            postgresql_using="gin",
+            postgresql_ops={"body": "gin_trgm_ops"},
+        ),
     )
 
 
