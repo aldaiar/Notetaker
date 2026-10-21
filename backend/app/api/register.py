@@ -14,7 +14,7 @@ router = APIRouter(tags=["Registration"])
 
 
 @router.post(
-    "/register",
+    "/auth/register",
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
 )

@@ -82,7 +82,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        server_default="now()",
+        server_default=func.now(),
     )
 
     notes: Mapped[list["Note"]] = relationship(
@@ -149,7 +149,7 @@ class Note(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        server_default="now()",
+        server_default=func.now(),
     )
 
     updated_at: Mapped[datetime] = mapped_column(
@@ -195,7 +195,7 @@ class Note(Base):
         "version_id_col": version,
         "eager_defaults": True,
     }
-    
+
     __table_args__ = (
         Index(
             "ix_notes_user_id_starts_at",

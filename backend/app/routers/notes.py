@@ -1,16 +1,39 @@
 from typing import Annotated, Literal
+from datetime import datetime
+from pydantic import AwareDatetime
 
 from fastapi import APIRouter, Query, status
-from datetime import datetime
 
 from app.deps import CurrentUser, Session, not_implemented
 from app.schemas.common import Page, VersionBody
 from app.schemas.notes import NoteConflict, NoteCreate, NoteRead, NoteUpdate
 from app.api import notes as service
+
+
 router = APIRouter(prefix="/notes", tags=["notes"])
 
 CONFLICT = {409: {"model": NoteConflict, "description": "Версия заметки изменилась"}}
 
+
+@router.get("", response_model=Page[NoteRead])
+async def list_notes(
+    user: CurrentUser,
+    session: Session,
+    q: str | None = Query(None, max_length=200),
+    tag_ids: Annotated[list[int] | None, Query()] = None,
+    is_active: bool | None = None,
+    date_from: AwareDatetime | None = None,
+    date_to: AwareDatetime | None = None,
+    sort: Literal["starts_at", "updated_at"] = "starts_at",
+    order: Literal["asc", "desc"] = "asc",
+    cursor: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+):
+    return await service.list_notes(
+        session, user.id, q=q, tag_ids=tag_ids, is_active=is_active,
+        date_from=date_from, date_to=date_to, sort=sort, order=order,
+        cursor=cursor, limit=limit,
+    )
 
 @router.post("", response_model=NoteRead, status_code=status.HTTP_201_CREATED)
 async def create_note(body: NoteCreate, user: CurrentUser, session: Session):

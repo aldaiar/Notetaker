@@ -9,7 +9,7 @@ from app.security import create_access_token, verify_password
 
 
 router = APIRouter(
-    prefix="/auth",
+    prefix="/auth/login",
     tags=["Authentication"],
 )
 
