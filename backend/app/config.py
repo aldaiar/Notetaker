@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     smtp_host: str = "localhost"
     smtp_port: int = 1025
     smtp_from: str = "notes@example.com"
-    
+    secret_key: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

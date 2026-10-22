@@ -9,6 +9,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.mailer import send_email
 from app.db.models import Note, Notification, Reminder, ReminderDelivery, User
 from app.api.calendar import occurrences_between
+from app.events import publish
+
 
 log = logging.getLogger(__name__)
 UTC = timezone.utc
@@ -74,10 +76,14 @@ async def process_due(session_factory) -> int:
                     await session.commit()
                     continue
 
-                session.add(Notification(
+                n = Notification(
                     user_id=uid, note_id=item.note_id, title=item.title,
                     occurrence_starts_at=item.occurrence_start,
-                ))
+                )
+                session.add(n)
+                await session.flush()
+                nid = n.id 
                 await session.commit()
+                await publish(uid, "notification.new", notification_id=nid, note_id=item.note_id, title=item.title)
                 sent += 1
     return sent

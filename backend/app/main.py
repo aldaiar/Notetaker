@@ -20,6 +20,8 @@ from app.routers import (
 )
 from app.api.auth import router as auth_router
 from app.api.register import router as register_router
+from app.events import listen_loop
+from app.scheduler import cleanup_loop
 
 
 @asynccontextmanager
@@ -28,12 +30,16 @@ async def lifespan(app: FastAPI):
         await connection.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await connection.run_sync(Base.metadata.create_all)
     task = asyncio.create_task(scheduler_loop())
+    listener = asyncio.create_task(listen_loop())
+    cleaner = asyncio.create_task(cleanup_loop())
+
     try:
         yield
     finally:
-        task.cancel()
+        for t in (task, listener, cleaner):
+            t.cancel()
         with suppress(asyncio.CancelledError):
-            await task
+            await t
         await engine.dispose()
 
     

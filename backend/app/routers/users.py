@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 
-from app.deps import CurrentUser, Session, not_implemented
+from app.deps import CurrentUser, Session
 from app.schemas.users import UserRead, UserUpdate
+from app.events import publish
+from app.api import users as service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -13,5 +15,7 @@ async def get_me(user: CurrentUser):
 
 @router.patch("/me", response_model=UserRead)
 async def update_me(body: UserUpdate, user: CurrentUser, session: Session):
-    """Смена email и часового пояса. Расписание напоминаний (UTC) не трогается."""
-    not_implemented()
+    uid = user.id
+    updated = await service.update_me(session, uid, body)
+    await publish(uid, "settings.updated")
+    return updated
