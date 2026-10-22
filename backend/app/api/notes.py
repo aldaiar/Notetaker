@@ -69,13 +69,19 @@ def _check_until(starts_at: datetime, until: date | None, tz: str) -> None:
         )
 
 
-async def _commit(session: AsyncSession, user_id: int, note_id: int) -> Note:
-    """Коммит + защита от гонки: StaleDataError превращается в 409 с актуальной заметкой."""
+async def _save(session: AsyncSession, user_id: int, note_id: int) -> None:
+    """Коммит; StaleDataError превращается в 409 с актуальной заметкой."""
     try:
         await session.commit()
     except StaleDataError:
         await session.rollback()
         raise VersionConflict(await _fetch(session, user_id, note_id))
+
+
+async def _commit(
+    session: AsyncSession, user_id: int, note_id: int, *, conflict_id: int | None = None
+) -> Note:
+    await _save(session, user_id, conflict_id or note_id)
     return await _fetch(session, user_id, note_id)
 
 
@@ -95,6 +101,7 @@ async def create_note(session: AsyncSession, user: User, data: NoteCreate) -> No
         recurrence_until=data.recurrence.until if data.recurrence else None,
         tags=await _load_tags(session, user.id, data.tag_ids),
         reminders=[Reminder(offset_minutes=m) for m in data.reminders],
+        timezone=user.timezone
     )
     session.add(note)
     await session.flush()
@@ -127,10 +134,12 @@ async def update_note(
         new_until = data.recurrence.until if data.recurrence else None
         if new_freq != note.recurrence_freq:
             series_changed = True
+        if note.recurrence_freq is None and new_freq is not None:
+            note.timezone = user.timezone
         note.recurrence_freq = new_freq
         note.recurrence_until = new_until
 
-    _check_until(note.starts_at, note.recurrence_until, user.timezone)
+    _check_until(note.starts_at, note.recurrence_until, note.timezone)
 
     if "tag_ids" in fields:
         note.tags = await _load_tags(session, user.id, data.tag_ids)

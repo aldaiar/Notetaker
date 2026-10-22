@@ -191,6 +191,10 @@ class Note(Base):
         cascade="all, delete-orphan",
     )
 
+    timezone: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="UTC", server_default="UTC"
+    )
+
     __mapper_args__ = {
         "version_id_col": version,
         "eager_defaults": True,
@@ -386,7 +390,7 @@ class ReminderDelivery(Base):
     sent_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        server_default="now()",
+        server_default=func.now(),
     )
 
     reminder: Mapped["Reminder"] = relationship(
@@ -400,3 +404,16 @@ class ReminderDelivery(Base):
             name="uq_reminder_deliveries_occurrence",
         ),
     )
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    note_id: Mapped[int] = mapped_column(ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    occurrence_starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (Index("ix_notifications_user_id_seen_at", "user_id", "seen_at"),)

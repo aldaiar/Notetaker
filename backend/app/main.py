@@ -1,5 +1,8 @@
+import asyncio
+
 from sqlalchemy import text
-from contextlib import asynccontextmanager
+
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI
 from fastapi import Request
@@ -7,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.exceptions import VersionConflict
 from app.schemas.notes import NoteConflict, NoteRead
-from sqlalchemy import text
+from app.scheduler import scheduler_loop
 
 from app.db.database import engine
 from app.db.base import Base
@@ -24,8 +27,16 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as connection:
         await connection.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await connection.run_sync(Base.metadata.create_all)
+    task = asyncio.create_task(scheduler_loop())
+    try:
+        yield
+    finally:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+        await engine.dispose()
 
-    yield
+    
 
     await engine.dispose()
 

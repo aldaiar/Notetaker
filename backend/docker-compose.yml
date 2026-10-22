@@ -16,6 +16,12 @@ services:
       timeout: 5s
       retries: 5
 
+  mailpit:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"   # веб-интерфейс с письмами
+      - "1025:1025"   # SMTP
   api:
     build: .
     restart: unless-stopped
@@ -24,6 +30,7 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      SMTP_HOST: mailpit
     ports:
       - "8000:8000"
     env_file:
@@ -31,6 +38,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit: 
+        condition: service_started
+    
 
 volumes:
   pgdata:
