@@ -15,7 +15,7 @@ Docker и Docker Compose v2. Больше ничего ставить не ну�
 ### 2. Клонирование
 ```bash
 git clone <url-репозитория> notetaker
-cd notetaker
+cd notetaker/backend
 ```
 
 ### 3. Файл `.env`
