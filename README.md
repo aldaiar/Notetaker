@@ -30,6 +30,7 @@ POSTGRES_USER=app_user
 POSTGRES_PASSWORD=super_secret_password
 POSTGRES_DB=app_db
 POSTGRES_PORT=5432
+POSTGRES_HOST=db
 
 # Приложение (для запуска вне Docker)
 DATABASE_URL=postgresql+asyncpg://app_user:super_secret_password@localhost:5432/app_db
